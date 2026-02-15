@@ -18,3 +18,14 @@ export function getAnswerOfDay(day: number) {
     hint: hint || getHint(word),
   }
 }
+
+// Get a random idiom for random mode
+export function getRandomIdiom() {
+  const randomIndex = Math.floor(Math.random() * answers.length)
+  const answer = answers[randomIndex]
+  const [word = '', hint = ''] = answer
+  return {
+    word,
+    hint: hint || getHint(word),
+  }
+}

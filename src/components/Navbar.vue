@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { isDark, showDashboard, showHelp, showSettings, useMask } from '~/state'
-import { gamesCount } from '~/storage'
+import { isDark, showDashboard, showHelp, showSettings, useMask, startNewRandomGame } from '~/state'
+import { gamesCount, gameMode, currentRandomWord } from '~/storage'
 
 const toggleDark = useToggle(isDark)
 const toggleSettings = useToggle(showSettings)
@@ -9,6 +9,18 @@ const toggleDashboard = useToggle(showDashboard)
 function openHelp() {
   showHelp.value = true
   useMask.value = false
+}
+
+function toggleGameMode() {
+  if (gameMode.value === 'daily') {
+    gameMode.value = 'random'
+    // Start a new random game when switching to random mode
+    startNewRandomGame()
+  }
+  else {
+    gameMode.value = 'daily'
+    currentRandomWord.value = ''
+  }
 }
 </script>
 
@@ -27,6 +39,14 @@ function openHelp() {
         </button>
       </div>
       <div flex items-center>
+        <button
+          icon-btn mx2
+          :title="gameMode === 'daily' ? '每日挑战' : '随机模式'"
+          @click="toggleGameMode()"
+        >
+          <div v-if="gameMode === 'daily'" i-carbon-calendar />
+          <div v-else i-carbon-shuffle />
+        </button>
         <button icon-btn mx2 @click="toggleSettings()">
           <div i-carbon-settings />
         </button>

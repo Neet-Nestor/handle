@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { filterNonChineseChars } from '@hankit/tools'
-import { answer, dayNo, isDev, isFailed, isFinished, showCheatSheet, showFailed, showHelp, showHint } from '~/state'
-import { markStart, meta, tries, useNoHint, useStrictMode } from '~/storage'
+import { answer, dayNo, isDev, isFailed, isFinished, showCheatSheet, showFailed, showHelp, showHint, startNewRandomGame } from '~/state'
+import { markStart, meta, tries, useNoHint, useStrictMode, gameMode } from '~/storage'
 import { t } from '~/i18n'
 import { TRIES_LIMIT, WORD_LENGTH, checkValidIdiom } from '~/logic'
 
@@ -32,6 +32,13 @@ function reset() {
   meta.value = {}
   input.value = ''
   inputValue.value = ''
+}
+function playAgainRandom() {
+  reset()
+  startNewRandomGame()
+  nextTick(() => {
+    focus()
+  })
 }
 function handleInput(e: Event) {
   const el = (e.target! as HTMLInputElement)
@@ -143,9 +150,12 @@ watchEffect(() => {
         </div>
       </Transition>
       <Transition name="fade-in">
-        <div v-if="isFinishedDelay && isFinished">
-          <ResultFooter />
-          <Countdown />
+        <div v-if="isFinishedDelay && isFinished" flex="~ col" items-center>
+          <ResultFooter :day="gameMode === 'daily'" />
+          <Countdown v-if="gameMode === 'daily'" />
+          <button v-if="gameMode === 'random'" mt4 btn p="x6 y2" @click="playAgainRandom()">
+            <div i-carbon-renew inline-block mr-1 /> {{ t('play-again') }}
+          </button>
         </div>
       </Transition>
 

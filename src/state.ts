@@ -1,8 +1,8 @@
 import { breakpointsTailwind } from '@vueuse/core'
 import type { MatchType, ParsedChar } from './logic'
 import { START_DATE, TRIES_LIMIT, WORD_LENGTH, parseWord as _parseWord, testAnswer as _testAnswer, checkPass, getHint, isDstObserved, numberToHanzi } from './logic'
-import { useNumberTone as _useNumberTone, inputMode, meta, spMode, tries } from './storage'
-import { getAnswerOfDay } from './answers'
+import { useNumberTone as _useNumberTone, inputMode, meta, spMode, tries, gameMode, currentRandomWord, randomModeHistory } from './storage'
+import { getAnswerOfDay, getRandomIdiom } from './answers'
 
 export const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 export const isMobile = isIOS || /iPad|iPhone|iPod|Android|Phone|webOS/i.test(navigator.userAgent)
@@ -38,14 +38,45 @@ export const daySince = useDebounce(computed(() => {
 }))
 export const dayNo = ref(+(params.get('d') || daySince.value))
 export const dayNoHanzi = computed(() => `${numberToHanzi(dayNo.value)}日`)
-export const answer = computed(() =>
-  params.get('word')
-    ? {
-        word: params.get('word')!,
-        hint: getHint(params.get('word')!),
-      }
-    : getAnswerOfDay(dayNo.value),
-)
+
+// Answer selection based on game mode
+export const answer = computed(() => {
+  // URL parameter override
+  if (params.get('word')) {
+    return {
+      word: params.get('word')!,
+      hint: getHint(params.get('word')!),
+    }
+  }
+
+  // Random mode
+  if (gameMode.value === 'random') {
+    if (!currentRandomWord.value) {
+      // Generate new random word if none exists
+      const randomAnswer = getRandomIdiom()
+      currentRandomWord.value = randomAnswer.word
+      return randomAnswer
+    }
+    return {
+      word: currentRandomWord.value,
+      hint: getHint(currentRandomWord.value),
+    }
+  }
+
+  // Daily challenge mode (default)
+  return getAnswerOfDay(dayNo.value)
+})
+
+// Function to start a new random game
+export function startNewRandomGame() {
+  const randomAnswer = getRandomIdiom()
+  currentRandomWord.value = randomAnswer.word
+
+  // Clear current random game state
+  if (currentRandomWord.value in randomModeHistory.value) {
+    delete randomModeHistory.value[currentRandomWord.value]
+  }
+}
 
 export const hint = computed(() => answer.value.hint)
 export const parsedAnswer = computed(() => parseWord(answer.value.word))

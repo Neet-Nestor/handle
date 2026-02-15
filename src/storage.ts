@@ -17,14 +17,38 @@ export const useCheckAssist = useStorage('handle-check-assist', false)
 export const useStrictMode = useStorage('handle-strict', false)
 export const acceptCollecting = useStorage('handle-accept-collecting', true)
 
+// Game mode: 'daily' or 'random'
+export const gameMode = useStorage<'daily' | 'random'>('handle-game-mode', 'daily')
+
+// Random mode state
+export const randomModeHistory = useStorage<Record<string, TriesMeta>>('handle-random-tries-meta', {})
+export const currentRandomWord = useStorage<string>('handle-random-word', '')
+
 export const meta = computed<TriesMeta>({
   get() {
+    // Random mode uses word-based storage
+    if (gameMode.value === 'random') {
+      const word = currentRandomWord.value
+      if (!word)
+        return {}
+      if (!(word in randomModeHistory.value))
+        randomModeHistory.value[word] = {}
+      return randomModeHistory.value[word]
+    }
+    // Daily mode uses day-based storage
     if (!(dayNo.value in history.value))
       history.value[dayNo.value] = {}
     return history.value[dayNo.value]
   },
   set(v) {
-    history.value[dayNo.value] = v
+    if (gameMode.value === 'random') {
+      const word = currentRandomWord.value
+      if (word)
+        randomModeHistory.value[word] = v
+    }
+    else {
+      history.value[dayNo.value] = v
+    }
   },
 })
 
@@ -32,7 +56,10 @@ export const tries = computed<string[]>({
   get() {
     if (!meta.value.tries)
       meta.value.tries = []
-    return legacyTries.value[dayNo.value] || meta.value.tries
+    // Legacy tries only for daily mode
+    if (gameMode.value === 'daily')
+      return legacyTries.value[dayNo.value] || meta.value.tries
+    return meta.value.tries
   },
   set(v) {
     meta.value.tries = v
